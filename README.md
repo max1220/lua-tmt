@@ -3,10 +3,9 @@ lua-tmt
 
 Simple lua binding for [libtmt](https://github.com/deadpixi/libtmt), the tiny mock terminal library.
 
-This is a terminal emulation library, it takes strings with terminal escape sequences, and updates a cell-matrix accordingly and a few paramters accordingly.
+This is a terminal emulation library, it takes strings with terminal escape sequences, and updates a cell-matrix and a few paramters accordingly.
 
-This library does not spawn a process and offer an interface for reading/writing from these processes. For that, look at [lpty](http://tset.de/lpty/index.html).
-With a library like lpty however you can create terminal multiplexers, or GUI terminal emulators.  
+With a library like [lpty](http://tset.de/lpty/index.html), one can create terminal multiplexers, or GUI terminal emulators.  
 
 
 
@@ -17,8 +16,9 @@ After cloning the repository, or downloading the .zip, modify the makefile if ne
 
 Then build the project by running `make` in this folder.
 
-The generated `tmt.so`` is the Lua library and can be copied to your project path, or(to install systemwide) somewhere in lua's package.cpath.
-To list all lua package.cpath locations from bash: `lua -e "print((package.cpath:gsub(';', '\n')))"`  
+The generated `tmt.so` is the Lua library and can be copied to your project path, or(to install systemwide) somewhere in lua's package.cpath.
+
+To list Lua's default package.cpath from bash: `lua -e "print((package.cpath:gsub(';', '\n')))"`
 
 
 
@@ -26,7 +26,7 @@ Usage
 -----
 
 The library(`tmt = require("tmt")`) exports one function(`tmt.new(w,h)`) and a lookup table(`tmt.special_keys[KEY_NAME] = terminal_escape_code`):
-A terminal returned by `term = tmt.new` supports the following functions:
+A terminal returned by `term = tmt.new` supports the following functions:  
 
 
 * `events = term:write(str)` writes the string `str` to the terminal.

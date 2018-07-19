@@ -78,7 +78,7 @@ Example
 For a more complete example, see example_dump_screen.lua.
 
 
-'''
+```
 local tmt = require("tmt")
 local term = tmt.new(80, 25)
 term:write("Hello World!")
@@ -87,4 +87,4 @@ for _, cell in ipairs(screen.lines[1]) do
 	io.write(string.char(cell.char))
 end
 io.write("\n")
-'''
+```

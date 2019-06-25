@@ -16,6 +16,8 @@
 #define LUA_T_PUSH_S_B(S, N) lua_pushstring(L, S); lua_pushboolean(L, N); lua_settable(L, -3);
 #define LUA_T_PUSH_S_S(S, S2) lua_pushstring(L, S); lua_pushstring(L, S2); lua_settable(L, -3);
 #define LUA_T_PUSH_S_CF(S, CF) lua_pushstring(L, S); lua_pushcfunction(L, CF); lua_settable(L, -3);
+#define CHECK_TMT(L, I, T) T=(tmt_t *)luaL_checkudata(L, I, "tmt"); if (T==NULL) { lua_pushnil(L); lua_pushfstring(L, "Argument %d must be a TMT", I); return 2; }
+
 
 #define NS_IN_S 1000000000
 
@@ -35,10 +37,8 @@ typedef struct {
 static int l_write(lua_State *L) {
 	struct timespec t;
 
-	tmt_t *tmt = (tmt_t *)lua_touserdata(L, 1);
-	if (lua_getmetatable(L, 1) == 0) {
-		return 0;
-	}
+	tmt_t *tmt;
+	CHECK_TMT(L, 1, tmt)
 	const char* str = luaL_checkstring(L, 2);
 
 	const TMTPOINT *c = tmt_cursor(tmt->vt);
@@ -155,7 +155,8 @@ void insert_lines(lua_State *L, TMT *vt) {
 }
 
 static int l_get_screen(lua_State *L) {
-	tmt_t *tmt = (tmt_t *)lua_touserdata(L, 1);
+	tmt_t *tmt;
+	CHECK_TMT(L, 1, tmt)
 	TMT *vt = tmt->vt;
 
 	lua_newtable(L);
@@ -171,7 +172,8 @@ static int l_get_screen(lua_State *L) {
 
 
 static int l_get_cursor(lua_State *L) {
-	tmt_t *tmt = (tmt_t *)lua_touserdata(L, 1);
+	tmt_t *tmt;
+	CHECK_TMT(L, 1, tmt)
 	TMT *vt = tmt->vt;
 	const TMTPOINT *c = tmt_cursor(vt);
 	
@@ -183,7 +185,8 @@ static int l_get_cursor(lua_State *L) {
 
 
 static int l_set_size(lua_State *L) {
-	tmt_t *tmt = (tmt_t *)lua_touserdata(L, 1);
+	tmt_t *tmt;
+	CHECK_TMT(L, 1, tmt)
 	TMT *vt = tmt->vt;
 
 	int w = lua_tointeger(L, 1);
@@ -199,7 +202,8 @@ static int l_set_size(lua_State *L) {
 
 
 static int l_get_size(lua_State *L) {
-	tmt_t *tmt = (tmt_t *)lua_touserdata(L, 1);
+	tmt_t *tmt;
+	CHECK_TMT(L, 1, tmt);
 
 	lua_pushinteger(L, tmt->w);
 	lua_pushinteger(L, tmt->h);
@@ -210,8 +214,9 @@ static int l_get_size(lua_State *L) {
 
 
 void input_callback(tmt_msg_t m, TMT *vt, const void *a, void *p) {
-	lua_State *L = (lua_State*)p;
-	tmt_t *tmt = (tmt_t *)lua_touserdata(L, 1);
+	//lua_State *L = (lua_State*)p;
+	tmt_t *tmt = (tmt_t*)p;
+	//CHECK_TMT(L, 1, tmt)
 
 	if (tmt != NULL) {
 		switch (m){
@@ -239,11 +244,11 @@ void input_callback(tmt_msg_t m, TMT *vt, const void *a, void *p) {
 }
 
 static int l_new(lua_State *L) {
-	tmt_t *tmt = (tmt_t *)lua_newuserdata(L, sizeof(*tmt));
+	tmt_t *tmt = (tmt_t *)lua_newuserdata(L, sizeof(tmt_t));
 	int w = lua_tointeger(L, 1);
 	int h = lua_tointeger(L, 2);
 
-	TMT *vt = tmt_open((size_t)h, (size_t)w, input_callback, L, NULL);
+	TMT *vt = tmt_open((size_t)h, (size_t)w, input_callback, tmt, NULL);
 
 	tmt->vt = vt;
 
@@ -254,32 +259,16 @@ static int l_new(lua_State *L) {
 	tmt->update_answer = 0;
 	tmt->update_cursor = 0;
 
-	lua_newtable(L);
-
-	lua_pushstring(L, "__index");
-	lua_newtable(L);
-
-	lua_pushstring(L, "write");
-	lua_pushcfunction(L, l_write);
-	lua_settable(L, -3);
-
-	lua_pushstring(L, "get_screen");
-	lua_pushcfunction(L, l_get_screen);
-	lua_settable(L, -3);
-
-	lua_pushstring(L, "get_cursor");
-	lua_pushcfunction(L, l_get_cursor);
-	lua_settable(L, -3);
-
-	lua_pushstring(L, "get_size");
-	lua_pushcfunction(L, l_get_size);
-	lua_settable(L, -3);
-
-	lua_pushstring(L, "set_size");
-	lua_pushcfunction(L, l_set_size);
-	lua_settable(L, -3);
-
-	lua_settable(L, -3);
+	if (luaL_newmetatable(L, "tmt")) {
+		lua_pushstring(L, "__index");
+		lua_newtable(L);
+		LUA_T_PUSH_S_CF("write", l_write)
+		LUA_T_PUSH_S_CF("get_screen", l_get_screen)
+		LUA_T_PUSH_S_CF("get_cursor", l_get_cursor)
+		LUA_T_PUSH_S_CF("get_size", l_get_size)
+		LUA_T_PUSH_S_CF("set_size", l_set_size)
+		lua_settable(L, -3);
+	}
 
 	lua_setmetatable(L, -2);
 	return 1;

@@ -1,4 +1,4 @@
-#!/usr/bin/env lua
+#!/usr/bin/env luajit
 local tmt = require("tmt")
 local function td(t, i)
 	local i = tonumber(i) or 0
